@@ -7,3 +7,42 @@
 // (R0, R1, R2 refer to RAM[0], RAM[1], and RAM[2], respectively.)
 
 // Put your code here.
+
+@R1
+D = M
+
+@INIT
+D; JGE
+D = 0
+@R1
+M = D - M
+@R0
+M = D - M
+
+(INIT)
+@res
+M = 0
+
+(LOOP)
+@R1
+D=M
+@COPY_TO_R2
+D; JEQ
+@R0
+D = M
+@res
+M = M + D
+@R1
+M = M - 1
+@LOOP
+0; JMP
+
+(COPY_TO_R2)
+@res
+D = M
+@R2
+M = D
+
+(END)
+@END
+0; JMP
