@@ -39,5 +39,34 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
     PARTS:
-    // Put your code here:
+    Not(in=instruction[15], out=isAInst);
+    Or(a=isAInst, b=instruction[5], out=loadA); // loadA if A-Inst or C-Inst bit d3 = 1
+    Mux16(a=instruction, b=ALUOut, sel=instruction[15], out=inA);
+    ARegister(in=inA, load=loadA, out=A, out[0..14]=addressM);
+
+    And(a=instruction[15], b=instruction[4], out=loadD); // loadD if C-Inst and bit d2 = 1
+    DRegister(in=ALUOut, load=loadD, out=D);
+
+    Mux16(a=A, b=inM, sel=instruction[12], out=AOrM); // y input of ALU
+
+    ALU(x=D, y=AOrM, 
+        zx=instruction[11], nx=instruction[10], // zx = C-Inst bit c1, nx = C-Inst bit c2
+        zy=instruction[9], ny=instruction[8], // zy = C-Inst bit c3, ny = C-Inst bit c4
+        f=instruction[7], no=instruction[6], // f = C-Inst fit c5, no = C-Inst bit c6
+        out=ALUOut, out=outM, zr=zr, ng=ng);
+
+    And(a = instruction[15], b = instruction[3], out = writeM); // writeM if C-Inst and bit d3 = 1
+
+    // Jump handling
+    And(a = instruction[2], b = ng, out = tstJ1);
+    And(a = instruction[1], b = zr, out = tstJ2);
+    Not(in=ng, out=pos);
+    Not(in=zr, out=nzr);
+    And(a=pos, b=nzr, out=stricPos);
+    And(a = instruction[0], b = stricPos, out = tstJ3);
+    Or(a=tstJ1, b=tstJ2, out=tstJ12);
+    Or(a=tstJ12, b=tstJ3, out=tstJ123);
+    And(a=tstJ123, b=instruction[15], out=loadPC); // JMP if one of C-Inst j1, j2 or j3 are set 
+
+    PC(in=A, load=loadPC, inc=true, reset=reset, out[0..14]=pc); // PC Register
 }
